@@ -1,4 +1,5 @@
 import openpyxl
+import time
 
 def read_info(cw, day, add = 'Work.xlsx'):
     # ブック、シートを開く
@@ -15,16 +16,13 @@ def write_info(cw, day, info, add = 'Work.xlsx'):
     return
 
 class task:
-    task_name = ''
-    task_plan_time = 0
-    task_actual_time = 0
-    task_comment = ''
-
-    def __init__(self, *, name = '', plan_time = 0, actual_time = 0, comment = ''):
+    def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = ''):
         self.task_name = name
         self.task_plan_time = plan_time
         self.task_actual_time = actual_time
         self.task_comment = comment
+        self.start_time = None
+        self.elapsed_time = None
 
     def read(self):
         return self.task_name, self.task_plan_time, self.task_actual_time, self.task_comment
@@ -40,13 +38,43 @@ class task:
             self.task_comment = comment
         return
 
+    def count_actual_time(self):
+        self.start_time = time.time()
+        #print('count start')
+        return
+    
+    def update_actual_time(self):
+        if self.start_time is not None:
+            self.elapsed_time = int(time.time() - self.start_time)
+            elapsed_hour = round(self.elapsed_time/3600, 4)
+            self.task_actual_time += elapsed_hour
+            #print('count time = ' + str(self.task_actual_time) + 'hour')
+        return
+
 def main():
     #write_info(2,1,'task')
     #print(read_info(3, 1))
-    task1 = task(name = 'mtg', actual_time = 2, comment = 'none', plan_time = 1)
+    '''
+    task1 = task(name = 'mtg', actual_time = 2.0, comment = 'none', plan_time = 1.0)
     print(task1.read())
     task1.write(actual_time = 4)
     print(task1.read())
+    '''
+    task1 = task(name = 'mtg', comment = 'none', plan_time = 1.0)
+    print(task1.read())
+    while True:
+        key = input('wait input\n')
+        if key == 's':
+            task1.count_actual_time()
+
+        if key == 'o':
+            task1.update_actual_time()
+        
+        if key == 'q':
+            break
+    
+    print(task1.read())
+
 
 
 if __name__ == "__main__":
