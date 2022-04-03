@@ -1,6 +1,8 @@
 import openpyxl
 import time
 import datetime
+import PySimpleGUI as sg
+import pickle
 
 def read_info(cw, day, add = 'Work.xlsx'):
     # ブック、シートを開く
@@ -16,14 +18,29 @@ def write_info(cw, day, info, add = 'Work.xlsx'):
     book.save(add)
     return
 
+def save_database(data, *, pkl_file = 'database.pkl'):
+    with open(pkl_file, 'wb') as f:
+        pickle.dump(data, f)
+    return
+
+def read_database(*, read_all = True, cw = None, day = None, pkl_file = 'database.pkl'):
+    with open(pkl_file, 'rb') as f:
+        data = pickle.load(f)
+    if read_all == False:
+        return data[cw - 1][day - 1]
+    else:
+        return data
+
+    
 class Task:
-    def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = ''):
+    def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = '', id = 0):
         self.task_name = name
         self.task_plan_time = plan_time
         self.task_actual_time = actual_time
         self.task_comment = comment
         self.start_time = None
         self.elapsed_time = None
+        self.task_id = id
 
     def read(self):
         return (self.task_name, self.task_plan_time, self.task_actual_time, self.task_comment)
@@ -63,49 +80,57 @@ class DailyInfo:
         datestr = now.strftime('%Y/%m/%d')
         self.txt = datestr + '\n'
     
-    def add_task(self,task_info):
-        self.total_task.append(task_info)
+    def add_task(self,task):
+        self.total_task.append(task)
         #print(self.total_task)
         return
 
-    def generate_txt(self):
-        count = 1
+    def generate_txt(self):       
         for task_in_list in self.total_task:
-            task_txt = str(count) + '. ' + task_in_list[0] + ' (' + str(task_in_list[1]) + 'h)' + '(✔️' + str(task_in_list[2]) + 'h)' + ' ' + task_in_list[3] + '\n'
+            task_txt = str(task_in_list.task_id) + '. ' + task_in_list.task_name + ' (' + str(task_in_list.task_plan_time) + 'h)' + '(✔️' + str(task_in_list.task_actual_time) + 'h)' + ' ' + task_in_list.task_comment + '\n'
             self.txt += task_txt
-            count += 1
         return self.txt
 
 
 def main():
-    task1 = Task(name = 'mtg', comment = 'daily', plan_time = 4.0)
+    '''
+    task1 = Task(name = 'MTG', comment = 'daily', plan_time = 4.0, id = 1)
     task1.write(actual_time = 2.0)
-
-    task2 = Task(name = 'programming', plan_time = 2.0, actual_time = 2.0)
-    task3 = Task(name = 'pc setup', plan_time = 1.0, actual_time = 1.5)
+    task2 = Task(name = 'python programming', plan_time = 2.0, actual_time = 2.0, id = 2)
+    task3 = Task(name = 'pc setup', plan_time = 1.0, actual_time = 1.5, id = 3)
 
     day1 = DailyInfo(day = 1, cw = 1)
-    day1.add_task(task1.read())
-    day1.add_task(task2.read())
-    day1.add_task(task3.read())
-    write_info(cw = day1.cw, day = day1.day, info = day1.generate_txt())
+    day1.add_task(task1)
+    day1.add_task(task2)
+    day1.add_task(task3)
+    #write_info(cw = day1.cw, day = day1.day, info = day1.generate_txt())
 
-
+    row, column = (60, 7) 
+    database = [[None for i in range(row)] for j in range(column)]
+    cw_db = 1
+    day_db = 1
+    database[cw_db - 1][day_db - 1] = day1
     '''
-    print(task1.read())
-    while True:
-        key = input('wait input\n')
-        if key == 's':
-            task1.count_actual_time()
+    
+    database = read_database()
+    
+    
+    save_database(database)
 
-        if key == 'o':
-            task1.update_actual_time()
-        
-        if key == 'q':
+''' 
+    layout = [[sg.Text(str(day1.total_task[0].task_id) + '. '+ day1.total_task[0].task_name),\
+        sg.Text('Plan time: ' + str(day1.total_task[0].task_plan_time) + 'h'),\
+            sg.Text('Actual time: ' + str(day1.total_task[0].task_actual_time) + 'h'),\
+                sg.Text('Comment: ' + str(day1.total_task[0].task_comment)),\
+                    sg.Button('Exit', key = '-exit-')]]
+
+    window = sg.Window('Task Manager ', layout)
+    while True:  # Event Loop
+        event, values = window.read()
+        if event in (sg.WIN_CLOSED, 'Exit'):
             break
-    '''
-
-
+    window.close()
+'''    
 
 if __name__ == "__main__":
     main()
