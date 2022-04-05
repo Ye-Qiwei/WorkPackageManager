@@ -27,11 +27,128 @@ def read_database(*, read_all = True, cw = None, day = None, pkl_file = 'databas
     with open(pkl_file, 'rb') as f:
         data = pickle.load(f)
     if read_all == False:
-        return data[cw - 1][day - 1]
+        return data[day- 1][cw - 1]
     else:
         return data
+class UserInterfaces:
+    def __init__(self,database):
+        self.db = database
+        sg.theme('SystemDefault')
+        self.window_startgui = None
+        self.window_update_task = None
 
-    
+    def start_gui(self):
+        button1 = sg.Button('Today', key = '-today-', size = (5,1), font=('Arial',12))
+        
+        week_days = ['Monday', ' Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        combo = sg.Combo(week_days, default_value = 'Choose day of week', size = (20,1), readonly = True, key = '-day-', enable_events = True, font=('Arial',16))
+
+        text = sg.Text('Calendar week: ', font=('Arial',16))
+        
+        input = sg.InputText(size = (10,1), key='-cw-', font=('Arial',16))
+
+        button2 = sg.Button('Next', key = '-next-', size = (5,1), font=('Arial',12))
+
+        layout = [[text, input, combo], [button1, button2]]
+        self.window_startgui = sg.Window('Task Manager --Welcome', layout)
+
+        today_date = datetime.date.today()
+        today_week = today_date.isocalendar()[1]
+        today_day = today_date.isocalendar()[2]
+
+        while True:  # Event Loop
+            event, values = self.window_startgui.read()
+            if event == sg.WIN_CLOSED:
+                break
+            if event == '-today-':
+                self.window_startgui['-day-'].Update(value = week_days[today_day-1])
+                self.window_startgui['-cw-'].Update(value = today_week)
+            if event == '-next-':
+                if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
+                    self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                    self.input_task_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                else:
+                    sg.popup('Wrong Input!', font=('Arial',12))
+                    continue
+        self.window_startgui.close()
+        
+
+    def task_info_gui(self, cw_this = None, day_this = None):
+        daily_info = self.db[day_this - 1][cw_this - 1]
+        #print(daily_info.generate_txt())
+        return
+
+    def input_task_gui(self, cw_this = None, day_this = None):
+        daily_info = self.db[day_this - 1][cw_this - 1]
+        if daily_info != None:
+            task_num = len(daily_info.total_task)
+        else:
+            task_num = 0
+        
+        total_task = 8
+
+        empty_text = sg.Text('', font=('Arial',12), size = (3,1))
+        text_name = sg.Text('Task Name: ', font=('Arial',12), size = (25,1))
+        text_plan = sg.Text('Plan/(h): ', font=('Arial',12), size = (8,1))
+        text1_actual = sg.Text('Actual/(h): ', font=('Arial',12), size = (8,1))
+        text_comment = sg.Text('Comment: ', font=('Arial',12), size = (20,1))
+        row0 = [empty_text, text_name, text_plan, text1_actual, text_comment]
+        
+        for index in range(1,total_task + 1):
+            if index <= task_num:
+                globals()[f'input{index}_0'] = sg.InputText(default_text = str(daily_info.total_task[index-1].task_id), key=f'-id{index}-', font=('Arial',12), size = (3,1))
+                globals()[f'input{index}_1'] = sg.InputText(default_text = str(daily_info.total_task[index-1].task_name), key=f'-name{index}-', font=('Arial',12), size = (25,1))
+                globals()[f'input{index}_2'] = sg.InputText(default_text = str(daily_info.total_task[index-1].task_plan_time), key=f'-plantime{index}-', font=('Arial',12), size = (8,1))
+                globals()[f'input{index}_3'] = sg.InputText(default_text = str(daily_info.total_task[index-1].task_actual_time), key=f'-actualtime{index}-', font=('Arial',12), size = (8,1))
+                globals()[f'input{index}_4'] = sg.InputText(default_text = str(daily_info.total_task[index-1].task_comment), key=f'-comment{index}-', font=('Arial',12), size = (20,1))
+                globals()[f'row{index}'] = [globals()[f'input{index}_0'], globals()[f'input{index}_1'], globals()[f'input{index}_2'], globals()[f'input{index}_3'], globals()[f'input{index}_4']]
+            else:
+                globals()[f'input{index}_0'] = sg.InputText('', key=f'-id{index}-', font=('Arial',12), size = (3,1))
+                globals()[f'input{index}_1'] = sg.InputText('',key=f'-name{index}-', font=('Arial',12), size = (25,1))
+                globals()[f'input{index}_2'] = sg.InputText('', key=f'-plantime{index}-', font=('Arial',12), size = (8,1))
+                globals()[f'input{index}_3'] = sg.InputText('', key=f'-actualtime{index}-', font=('Arial',12), size = (8,1))
+                globals()[f'input{index}_4'] = sg.InputText('', key=f'-comment{index}-', font=('Arial',12), size = (20,1))
+                globals()[f'row{index}'] = [globals()[f'input{index}_0'], globals()[f'input{index}_1'], globals()[f'input{index}_2'], globals()[f'input{index}_3'], globals()[f'input{index}_4']]
+        
+        button1 = sg.Button('Update', key = '-update-', size = (6,1), font=('Arial',12))
+
+        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1] # type: ignore 
+        
+        self.window_update_task = sg.Window('Task Manager --Update Task', layout)
+        
+        while True:  # Event Loop
+            event, values = self.window_update_task.read()
+            if event == sg.WIN_CLOSED:
+                break
+            if event == '-update-':
+                if daily_info != None:
+                    daily_info.clear_task()
+                else:
+                    daily_info = DailyInfo(cw = cw_this, day = day_this)
+                
+                for index in range(1,total_task + 1):
+                    new_name = values[f'-name{index}-']
+                    new_id = values[f'-id{index}-']
+                    new_plan_time = values[f'-plantime{index}-']
+                    new_actual_time = values[f'-actualtime{index}-']
+                    new_comment = values[f'-comment{index}-']
+                    if (new_name != '') and (new_id != '') and (new_plan_time != '') and (new_actual_time != '') and (new_comment != ''):
+                        globals()[f'task{index}'] = Task(name = new_name, id = float(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                        daily_info.add_task(globals()[f'task{index}'])
+                
+                self.db[day_this - 1][cw_this - 1] = daily_info
+                save_database(self.db)
+            '''if event == '-next-':
+                if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
+                    self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                else:
+                    sg.popup('Wrong Input!', font=('Arial',12))
+                    continue'''
+        self.window_update_task.close()   
+        
+        #print(daily_info.generate_txt())
+        return
+
 class Task:
     def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = '', id = 0):
         self.task_name = name
@@ -79,10 +196,13 @@ class DailyInfo:
         now = datetime.datetime.now(JST)
         datestr = now.strftime('%Y/%m/%d')
         self.txt = datestr + '\n'
-    
+
     def add_task(self,task):
         self.total_task.append(task)
-        #print(self.total_task)
+        return
+
+    def clear_task(self):
+        self.total_task = []
         return
 
     def generate_txt(self):       
@@ -113,24 +233,12 @@ def main():
     '''
     
     database = read_database()
-    
-    
-    save_database(database)
 
-''' 
-    layout = [[sg.Text(str(day1.total_task[0].task_id) + '. '+ day1.total_task[0].task_name),\
-        sg.Text('Plan time: ' + str(day1.total_task[0].task_plan_time) + 'h'),\
-            sg.Text('Actual time: ' + str(day1.total_task[0].task_actual_time) + 'h'),\
-                sg.Text('Comment: ' + str(day1.total_task[0].task_comment)),\
-                    sg.Button('Exit', key = '-exit-')]]
+    ui = UserInterfaces(database)
+    ui.start_gui()
 
-    window = sg.Window('Task Manager ', layout)
-    while True:  # Event Loop
-        event, values = window.read()
-        if event in (sg.WIN_CLOSED, 'Exit'):
-            break
-    window.close()
-'''    
+
+    save_database(database)  
 
 if __name__ == "__main__":
     main()
