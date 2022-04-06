@@ -73,8 +73,10 @@ class UserInterfaces:
                 self.window_startgui['-cw-'].Update(value = today_week)
             if event == '-next-':
                 if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
-                    self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                    #self.window_startgui.close()
+                    #self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
                     self.input_task_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                    #break
                 else:
                     sg.popup('Wrong Input!', font=('Arial',12))
                     continue
@@ -119,8 +121,10 @@ class UserInterfaces:
                 globals()[f'row{index}'] = [globals()[f'input{index}_0'], globals()[f'input{index}_1'], globals()[f'input{index}_2'], globals()[f'input{index}_3'], globals()[f'input{index}_4']]
         
         button1 = sg.Button('Update', key = '-update-', size = (6,1), font=('Arial',12))
+        button2 = sg.Button('Clear', key = '-clear-', size = (6,1), font=('Arial',12))
+        #button3 = sg.Button('Back', key = '-back-', size = (6,1), font=('Arial',12))
 
-        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1] # type: ignore 
+        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1,button2] # type: ignore 
         
         self.window_update_task = sg.Window('Task Manager --Update Task', layout)
         
@@ -128,12 +132,13 @@ class UserInterfaces:
             event, values = self.window_update_task.read()
             if event == sg.WIN_CLOSED:
                 break
+
             if event == '-update-':
                 if daily_info != None:
                     daily_info.clear_task()
                 else:
                     daily_info = DailyInfo(cw = cw_this, day = day_this)
-                
+            
                 for index in range(1,total_task + 1):
                     new_name = values[f'-name{index}-']
                     new_id = values[f'-id{index}-']
@@ -148,28 +153,31 @@ class UserInterfaces:
                         if new_actual_time == '':
                             new_actual_time = '0.0'
                         if not isfloat(new_plan_time):
-                            sg.popup('Wrong Input!', font=('Arial',12))
+                            sg.popup(f'Wrong Plan Time Input! ({new_plan_time})', font=('Arial',12))
                             new_plan_time = '0.0'
-                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
-                            daily_info.add_task(globals()[f'task{index}'])
-                        elif not isfloat(new_actual_time):
-                            sg.popup('Wrong Input!', font=('Arial',12))
+                        if not isfloat(new_actual_time):
+                            sg.popup(f'Wrong Actual Time Input! ({new_actual_time})', font=('Arial',12))
                             new_actual_time = '0.0'
-                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
-                            daily_info.add_task(globals()[f'task{index}'])
-                        else:
-                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
-                            daily_info.add_task(globals()[f'task{index}'])
-                        
-                
+                            
+                        globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                        daily_info.add_task(globals()[f'task{index}'])
+
                 self.db[day_this - 1][cw_this - 1] = daily_info
                 save_database(self.db)
-            '''if event == '-next-':
-                if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
-                    self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
-                else:
-                    sg.popup('Wrong Input!', font=('Arial',12))
-                    continue'''
+
+            if event == '-clear-':
+                for index in range(1,total_task + 1):
+                    self.window_update_task[f'-name{index}-'].Update(value = '')
+                    self.window_update_task[f'-id{index}-'].Update(value = '')
+                    self.window_update_task[f'-plantime{index}-'].Update(value = '')
+                    self.window_update_task[f'-actualtime{index}-'].Update(value = '')
+                    self.window_update_task[f'-comment{index}-'].Update(value = '')
+            '''
+            if event == '-back-':
+                self.window_update_task.close()
+                self.start_gui()
+                break
+            '''     
         self.window_update_task.close()   
         
         #print(daily_info.generate_txt())
