@@ -30,6 +30,14 @@ def read_database(*, read_all = True, cw = None, day = None, pkl_file = 'databas
         return data[day- 1][cw - 1]
     else:
         return data
+
+def isfloat(txt):
+    try:
+        float(txt)  
+        return True
+    except ValueError:
+        return False
+    
 class UserInterfaces:
     def __init__(self,database):
         self.db = database
@@ -132,9 +140,27 @@ class UserInterfaces:
                     new_plan_time = values[f'-plantime{index}-']
                     new_actual_time = values[f'-actualtime{index}-']
                     new_comment = values[f'-comment{index}-']
-                    if (new_name != '') and (new_id != '') and (new_plan_time != '') and (new_actual_time != '') and (new_comment != ''):
-                        globals()[f'task{index}'] = Task(name = new_name, id = float(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
-                        daily_info.add_task(globals()[f'task{index}'])
+                    if (new_name != '') or (new_id != '') and (new_plan_time != '') or (new_actual_time != '') or (new_comment != ''):
+                        if new_id == '':
+                            new_id = '0'
+                        if new_plan_time == '':
+                            new_plan_time = '0.0'
+                        if new_actual_time == '':
+                            new_actual_time = '0.0'
+                        if not isfloat(new_plan_time):
+                            sg.popup('Wrong Input!', font=('Arial',12))
+                            new_plan_time = '0.0'
+                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                            daily_info.add_task(globals()[f'task{index}'])
+                        elif not isfloat(new_actual_time):
+                            sg.popup('Wrong Input!', font=('Arial',12))
+                            new_actual_time = '0.0'
+                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                            daily_info.add_task(globals()[f'task{index}'])
+                        else:
+                            globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                            daily_info.add_task(globals()[f'task{index}'])
+                        
                 
                 self.db[day_this - 1][cw_this - 1] = daily_info
                 save_database(self.db)
