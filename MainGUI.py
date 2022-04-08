@@ -8,12 +8,17 @@ class UserInterfaces:
     def __init__(self,database):
         self.db = database
         sg.theme('SystemDefault')
-        self.window_dategui = None
+
+        self.window_date = None
         self.window_update_task = None
-        self.show_date_gui = True
+        self.window_task_info = None
+
         self.chosen_cw = None
         self.chosen_day = None
-        self.show_input_task_gui = True
+
+        self.show_date_gui = True
+        self.show_input_task_gui = False
+        self.show_task_info_gui = False
 
     def show_gui(self):
         while True:
@@ -21,7 +26,10 @@ class UserInterfaces:
                 self.date_gui()
             if self.show_input_task_gui:
                 self.input_task_gui(self.chosen_cw, self.chosen_day)
-            if not self.show_date_gui and not self.show_input_task_gui:
+            if self.show_task_info_gui:
+                self.task_info_gui(self.chosen_cw, self.chosen_day)
+            show_gui_all = (self.show_date_gui, self.show_input_task_gui, self.show_task_info_gui)
+            if not any(show_gui_all):
                 break
 
     def date_gui(self):
@@ -34,45 +42,110 @@ class UserInterfaces:
         
         input = sg.InputText(size = (10,1), key='-cw-', font=('Arial',16))
 
-        button2 = sg.Button('Next', key = '-next-', size = (5,1), font=('Arial',12))
+        button2 = sg.Button('Show Tasks', key = '-showtask-', size = (10,1), font=('Arial',12)) 
+        
+        button3 = sg.Button('Edit', key = '-edit-', size = (5,1), font=('Arial',12))
 
-        layout = [[text, input, combo], [button1, button2]]
-        self.window_dategui = sg.Window('Task Manager --Welcome', layout)
+        layout = [[text, input, combo], [button1], [button2, button3]]
+        self.window_date = sg.Window('Task Manager --Welcome', layout)
 
         today = functions.get_today()
         today_week = today[0]
         today_day = today[1]
 
-        self.show_date_gui
-
         while self.show_date_gui:  # Event Loop
-            event, values = self.window_dategui.read()
+            event, values = self.window_date.read()
             if event == sg.WIN_CLOSED:
                 self.show_date_gui = False
                 break
+
             if event == '-today-':
-                self.window_dategui['-day-'].Update(value = week_days[today_day-1])
-                self.window_dategui['-cw-'].Update(value = today_week)
-            if event == '-next-':
+                self.window_date['-day-'].Update(value = week_days[today_day-1])
+                self.window_date['-cw-'].Update(value = today_week)
+
+            if event == '-edit-':
                 if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
-                    #self.window_dategui.close()
-                    #self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
                     self.chosen_cw = int(values['-cw-'])
                     self.chosen_day = int(week_days.index(values['-day-']) + 1)
                     self.show_date_gui = False
                     self.show_input_task_gui = True
-                    #self.input_task_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
                     break
                 else:
                     sg.popup('Wrong Input!', font=('Arial',12))
                     continue
-        self.window_dategui.close()
+            
+            if event == '-showtask-':
+                if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
+                    self.chosen_cw = int(values['-cw-'])
+                    self.chosen_day = int(week_days.index(values['-day-']) + 1)
+                    self.show_date_gui = False
+                    self.show_task_info_gui = True
+                    break
+                else:
+                    sg.popup('Wrong Input!', font=('Arial',12))
+                    continue
+            
+        self.window_date.close()
         
 
     def task_info_gui(self, cw_this = None, day_this = None):
         daily_info = self.db[day_this - 1][cw_this - 1]
-        #print(daily_info.generate_txt())
-        return
+        if daily_info != None:
+            task_num = len(daily_info.total_task)
+            text_top = sg.Text('Task for today: ', font=('Arial',16))
+        else:
+            task_num = 0
+            text_top = sg.Text('Please edit task: ', font=('Arial',16))
+
+        info_row = [[]]
+
+        empty_text = sg.Text('', font=('Arial',12), size = (3,1))
+        text_name = sg.Text('Task Name: ', font=('Arial',12), size = (25,1))
+        text_plan = sg.Text('Plan/(h): ', font=('Arial',12), size = (8,1))
+        text1_actual = sg.Text('Actual/(h): ', font=('Arial',12), size = (8,1))
+        text_comment = sg.Text('Comment: ', font=('Arial',12), size = (25,1))
+        row0 = [empty_text, text_name, text_plan, text1_actual, text_comment]
+        
+        button1 = sg.Button('Choose date', key = '-backtodate-', size = (10,1), font=('Arial',12))
+        button2 = sg.Button('Edit', key = '-edit-', size = (6,1), font=('Arial',12))
+
+        if task_num != 0:
+            for index in range(1,task_num + 1):
+                globals()[f'text{index}_0'] = sg.Text(str(daily_info.total_task[index-1].task_id), font=('Arial',12), size = (3,1))
+                globals()[f'text{index}_1'] = sg.Text(str(daily_info.total_task[index-1].task_name), font=('Arial',12), size = (25,1))
+                globals()[f'text{index}_2'] = sg.Text(str(daily_info.total_task[index-1].task_plan_time), font=('Arial',12), size = (8,1))
+                globals()[f'text{index}_3'] = sg.Text(str(daily_info.total_task[index-1].task_actual_time), font=('Arial',12), size = (8,1))
+                globals()[f'text{index}_4'] = sg.Text(str(daily_info.total_task[index-1].task_comment), font=('Arial',12), size = (25,1))
+                globals()[f'button_start{index}'] = sg.Button('Start', key = f'-start{index}-', size = (6,1), font=('Arial',12))
+                globals()[f'button_end{index}'] = sg.Button('End', key = f'-end{index}-', size = (6,1), font=('Arial',12))
+                globals()[f'row{index}'] = [globals()[f'text{index}_0'], globals()[f'text{index}_1'], globals()[f'text{index}_2'], globals()[f'text{index}_3'], globals()[f'text{index}_4'], globals()[f'button_start{index}'], globals()[f'button_end{index}']]
+                info_row.append(globals()[f'row{index}'])
+            layout = [[text_top], [row0], info_row, [button1, button2]]
+
+        else:
+            layout = [[text_top], [button1, button2]]
+        
+        self.window_task_info = sg.Window('Task Manager --Task Info', layout)
+
+        while self.show_task_info_gui:
+            event, values = self.window_task_info.read()
+            if event == sg.WIN_CLOSED:
+                self.show_task_info_gui = False
+                break
+
+            if event == '-edit-':
+                self.chosen_cw = cw_this
+                self.chosen_day = day_this
+                self.show_task_info_gui = False
+                self.show_input_task_gui = True
+                break
+
+            if event == '-backtodate-':
+                self.show_date_gui = True
+                self.show_task_info_gui = False
+                break
+                           
+        self.window_task_info.close()
 
     def input_task_gui(self, cw_this = None, day_this = None):
         daily_info = self.db[day_this - 1][cw_this - 1]
@@ -108,15 +181,17 @@ class UserInterfaces:
         
         button1 = sg.Button('Update', key = '-update-', size = (6,1), font=('Arial',12))
         button2 = sg.Button('Clear', key = '-clear-', size = (6,1), font=('Arial',12))
-        button3 = sg.Button('Back', key = '-back-', size = (6,1), font=('Arial',12))
+        button3 = sg.Button('Choose date', key = '-backtodate-', size = (10,1), font=('Arial',12))
+        button4 = sg.Button('Show Tasks', key = '-showtask-', size = (10,1), font=('Arial',12)) 
 
-        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1, button2, button3] # type: ignore 
+        layout = [[row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1, button2], [button3, button4]] # type: ignore 
         
         self.window_update_task = sg.Window('Task Manager --Update Task', layout)
         
         while self.show_input_task_gui:  # Event Loop
             event, values = self.window_update_task.read()
             if event == sg.WIN_CLOSED:
+                self.show_input_task_gui = False
                 break
 
             if event == '-update-':
@@ -159,11 +234,18 @@ class UserInterfaces:
                     self.window_update_task[f'-actualtime{index}-'].Update(value = '')
                     self.window_update_task[f'-comment{index}-'].Update(value = '')
             
-            if event == '-back-':
+            if event == '-backtodate-':
                 self.show_date_gui = True
                 self.show_input_task_gui = False
                 break
-                 
+            
+            if event == '-showtask-':
+                self.chosen_cw = cw_this
+                self.chosen_day = day_this
+                self.show_input_task_gui = False
+                self.show_task_info_gui = True
+                break
+
         self.window_update_task.close()   
         
         #print(daily_info.generate_txt())
