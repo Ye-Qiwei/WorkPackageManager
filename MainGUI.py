@@ -8,10 +8,23 @@ class UserInterfaces:
     def __init__(self,database):
         self.db = database
         sg.theme('SystemDefault')
-        self.window_startgui = None
+        self.window_dategui = None
         self.window_update_task = None
+        self.show_date_gui = True
+        self.chosen_cw = None
+        self.chosen_day = None
+        self.show_input_task_gui = True
 
-    def start_gui(self):
+    def show_gui(self):
+        while True:
+            if self.show_date_gui:
+                self.date_gui()
+            if self.show_input_task_gui:
+                self.input_task_gui(self.chosen_cw, self.chosen_day)
+            if not self.show_date_gui and not self.show_input_task_gui:
+                break
+
+    def date_gui(self):
         button1 = sg.Button('Today', key = '-today-', size = (5,1), font=('Arial',12))
         
         week_days = ['Monday', ' Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -24,29 +37,36 @@ class UserInterfaces:
         button2 = sg.Button('Next', key = '-next-', size = (5,1), font=('Arial',12))
 
         layout = [[text, input, combo], [button1, button2]]
-        self.window_startgui = sg.Window('Task Manager --Welcome', layout)
+        self.window_dategui = sg.Window('Task Manager --Welcome', layout)
 
         today = functions.get_today()
         today_week = today[0]
         today_day = today[1]
 
-        while True:  # Event Loop
-            event, values = self.window_startgui.read()
+        self.show_date_gui
+
+        while self.show_date_gui:  # Event Loop
+            event, values = self.window_dategui.read()
             if event == sg.WIN_CLOSED:
+                self.show_date_gui = False
                 break
             if event == '-today-':
-                self.window_startgui['-day-'].Update(value = week_days[today_day-1])
-                self.window_startgui['-cw-'].Update(value = today_week)
+                self.window_dategui['-day-'].Update(value = week_days[today_day-1])
+                self.window_dategui['-cw-'].Update(value = today_week)
             if event == '-next-':
                 if (values['-day-'] in week_days) and (values['-cw-'].isdigit()) and (1 <= int(values['-cw-']) <= 52):
-                    #self.window_startgui.close()
+                    #self.window_dategui.close()
                     #self.task_info_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
-                    self.input_task_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
-                    #break
+                    self.chosen_cw = int(values['-cw-'])
+                    self.chosen_day = int(week_days.index(values['-day-']) + 1)
+                    self.show_date_gui = False
+                    self.show_input_task_gui = True
+                    #self.input_task_gui(int(values['-cw-']), int(week_days.index(values['-day-']) + 1))
+                    break
                 else:
                     sg.popup('Wrong Input!', font=('Arial',12))
                     continue
-        self.window_startgui.close()
+        self.window_dategui.close()
         
 
     def task_info_gui(self, cw_this = None, day_this = None):
@@ -88,13 +108,13 @@ class UserInterfaces:
         
         button1 = sg.Button('Update', key = '-update-', size = (6,1), font=('Arial',12))
         button2 = sg.Button('Clear', key = '-clear-', size = (6,1), font=('Arial',12))
-        #button3 = sg.Button('Back', key = '-back-', size = (6,1), font=('Arial',12))
+        button3 = sg.Button('Back', key = '-back-', size = (6,1), font=('Arial',12))
 
-        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1,button2] # type: ignore 
+        layout = [row0, row1, row2, row3, row4, row5, row6, row7, row8],[button1, button2, button3] # type: ignore 
         
         self.window_update_task = sg.Window('Task Manager --Update Task', layout)
         
-        while True:  # Event Loop
+        while self.show_input_task_gui:  # Event Loop
             event, values = self.window_update_task.read()
             if event == sg.WIN_CLOSED:
                 break
@@ -138,12 +158,12 @@ class UserInterfaces:
                     self.window_update_task[f'-plantime{index}-'].Update(value = '')
                     self.window_update_task[f'-actualtime{index}-'].Update(value = '')
                     self.window_update_task[f'-comment{index}-'].Update(value = '')
-            '''
+            
             if event == '-back-':
-                self.window_update_task.close()
-                self.start_gui()
+                self.show_date_gui = True
+                self.show_input_task_gui = False
                 break
-            '''     
+                 
         self.window_update_task.close()   
         
         #print(daily_info.generate_txt())
@@ -173,10 +193,10 @@ def main():
     database = functions.read_database()
 
     ui = UserInterfaces(database)
-    ui.start_gui()
+    ui.show_gui()
 
 
-    functions.save_database(database)  
+    #functions.save_database(database)  
 
 if __name__ == "__main__":
     main()
