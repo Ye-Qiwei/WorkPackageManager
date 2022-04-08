@@ -1,42 +1,8 @@
-import openpyxl
-import time
-import datetime
 import PySimpleGUI as sg
-import pickle
 
-def read_info(cw, day, add = 'Work.xlsx'):
-    # ブック、シートを開く
-    book = openpyxl.load_workbook(add)
-    sheet = book.active
-    info = sheet.cell(day+1, cw+1).value
-    return info
-
-def write_info(cw, day, info, add = 'Work.xlsx'):
-    book = openpyxl.load_workbook(add)
-    sheet = book.active
-    sheet.cell(day+1, cw+1).value = info
-    book.save(add)
-    return
-
-def save_database(data, *, pkl_file = 'database.pkl'):
-    with open(pkl_file, 'wb') as f:
-        pickle.dump(data, f)
-    return
-
-def read_database(*, read_all = True, cw = None, day = None, pkl_file = 'database.pkl'):
-    with open(pkl_file, 'rb') as f:
-        data = pickle.load(f)
-    if read_all == False:
-        return data[day- 1][cw - 1]
-    else:
-        return data
-
-def isfloat(txt):
-    try:
-        float(txt)  
-        return True
-    except ValueError:
-        return False
+import functions
+from SubClass import Task
+from SubClass import DailyInfo
     
 class UserInterfaces:
     def __init__(self,database):
@@ -60,9 +26,9 @@ class UserInterfaces:
         layout = [[text, input, combo], [button1, button2]]
         self.window_startgui = sg.Window('Task Manager --Welcome', layout)
 
-        today_date = datetime.date.today()
-        today_week = today_date.isocalendar()[1]
-        today_day = today_date.isocalendar()[2]
+        today = functions.get_today()
+        today_week = today[0]
+        today_day = today[1]
 
         while True:  # Event Loop
             event, values = self.window_startgui.read()
@@ -152,10 +118,10 @@ class UserInterfaces:
                             new_plan_time = '0.0'
                         if new_actual_time == '':
                             new_actual_time = '0.0'
-                        if not isfloat(new_plan_time):
+                        if not functions.isfloat(new_plan_time):
                             sg.popup(f'Wrong Plan Time Input! ({new_plan_time})', font=('Arial',12))
                             new_plan_time = '0.0'
-                        if not isfloat(new_actual_time):
+                        if not functions.isfloat(new_actual_time):
                             sg.popup(f'Wrong Actual Time Input! ({new_actual_time})', font=('Arial',12))
                             new_actual_time = '0.0'
                             
@@ -163,7 +129,7 @@ class UserInterfaces:
                         daily_info.add_task(globals()[f'task{index}'])
 
                 self.db[day_this - 1][cw_this - 1] = daily_info
-                save_database(self.db)
+                functions.save_database(self.db)
 
             if event == '-clear-':
                 for index in range(1,total_task + 1):
@@ -182,68 +148,6 @@ class UserInterfaces:
         
         #print(daily_info.generate_txt())
         return
-
-class Task:
-    def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = '', id = 0):
-        self.task_name = name
-        self.task_plan_time = plan_time
-        self.task_actual_time = actual_time
-        self.task_comment = comment
-        self.start_time = None
-        self.elapsed_time = None
-        self.task_id = id
-
-    def read(self):
-        return (self.task_name, self.task_plan_time, self.task_actual_time, self.task_comment)
-
-    def write(self, name = None, plan_time = None, actual_time = None, comment = None):
-        if name is not None:
-            self.task_name = name
-        if plan_time is not None:
-            self.task_plan_time = plan_time
-        if actual_time is not None:
-            self.task_actual_time = actual_time
-        if comment is not None:
-            self.task_comment = comment
-        return
-
-    def count_actual_time(self):
-        self.start_time = time.time()
-        #print('count start')
-        return
-    
-    def update_actual_time(self):
-        if self.start_time is not None:
-            self.elapsed_time = int(time.time() - self.start_time)
-            elapsed_hour = round(self.elapsed_time/3600, 4)
-            self.task_actual_time += elapsed_hour
-            #print('count time = ' + str(self.task_actual_time) + 'hour')
-        return
-
-class DailyInfo:
-    def __init__(self, cw = 0, day = 0):
-        self.cw = cw
-        self.day = day
-        self.total_task = []
-        t_delta = datetime.timedelta(hours=9)
-        JST = datetime.timezone(t_delta, 'JST')
-        now = datetime.datetime.now(JST)
-        datestr = now.strftime('%Y/%m/%d')
-        self.txt = datestr + '\n'
-
-    def add_task(self,task):
-        self.total_task.append(task)
-        return
-
-    def clear_task(self):
-        self.total_task = []
-        return
-
-    def generate_txt(self):       
-        for task_in_list in self.total_task:
-            task_txt = str(task_in_list.task_id) + '. ' + task_in_list.task_name + ' (' + str(task_in_list.task_plan_time) + 'h)' + '(✔️' + str(task_in_list.task_actual_time) + 'h)' + ' ' + task_in_list.task_comment + '\n'
-            self.txt += task_txt
-        return self.txt
 
 
 def main():
@@ -266,13 +170,13 @@ def main():
     database[cw_db - 1][day_db - 1] = day1
     '''
     
-    database = read_database()
+    database = functions.read_database()
 
     ui = UserInterfaces(database)
     ui.start_gui()
 
 
-    save_database(database)  
+    functions.save_database(database)  
 
 if __name__ == "__main__":
     main()
