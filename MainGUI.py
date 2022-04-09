@@ -4,8 +4,6 @@ import functions
 from SubClass import Task
 from SubClass import DailyInfo
 
-import time    
-
 class UserInterfaces:
     def __init__(self,database):
         self.db = database
@@ -118,6 +116,7 @@ class UserInterfaces:
         
         button1 = sg.Button('Choose date', key = '-backtodate-', size = (10,1), font=('Arial',12), button_color=('white', '#38A6CE'))
         button2 = sg.Button('Edit', key = '-edit-', size = (6,1), font=('Arial',12), button_color=('white', '#E54C29'))
+        button3 = sg.Button('Export', key = '-export-', size = (6,1), font=('Arial',12), button_color=('#000000','#ffffff'))
 
         if task_num != 0:
             for index in range(1,task_num + 1):
@@ -130,7 +129,7 @@ class UserInterfaces:
                 globals()[f'timer_counting{index}'] = False
                 globals()[f'row{index}'] = [globals()[f'text{index}_0'], globals()[f'text{index}_1'], globals()[f'text{index}_2'], globals()[f'text{index}_3'], globals()[f'text{index}_4'], globals()[f'button_startend{index}']]
                 info_row.append(globals()[f'row{index}'])
-            layout = [[text_date], [text_info], [row0], info_row, [button1, button2]]
+            layout = [[text_date], [text_info], [row0], info_row, [button1, button2], [button3]]
 
         else:
             layout = [[text_date], [text_info], [button1, button2]]
@@ -172,6 +171,9 @@ class UserInterfaces:
                 for index in range(1,task_num + 1):
                     daily_info.total_task[index-1].update_actual_time()
                     self.window_task_info[f'-actualtime{index}-'].Update(value = daily_info.total_task[index-1].task_actual_time)
+
+            if event == '-export-':
+                functions.write_info(cw_this, day_this, daily_info.generate_txt())
 
         self.db[day_this - 1][cw_this - 1] = daily_info
         functions.save_database(self.db)
