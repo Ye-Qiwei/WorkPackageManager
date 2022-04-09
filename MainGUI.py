@@ -92,10 +92,12 @@ class UserInterfaces:
         
 
     def task_info_gui(self, cw_this = None, day_this = None):
-        today = functions.get_today()
-        today_week = today[0]
-        today_day = today[1]
-        text_date = sg.Text('CW' + str(today_week) + ', ' + self.week_days[today_day-1], font=('Arial',16), text_color = '#000000', background_color='#D8D8E1')
+        #today = functions.get_today()
+        #today_week = today[0]
+        #today_day = today[1]
+        #text_date = sg.Text('CW' + str(today_week) + ', ' + self.week_days[today_day-1], font=('Arial',16), text_color = '#000000', background_color='#D8D8E1')
+        text_date = sg.Text('CW' + str(cw_this) + ', ' + self.week_days[day_this-1], font=('Arial',16), text_color = '#000000', background_color='#D8D8E1')
+
 
         daily_info = self.db[day_this - 1][cw_this - 1]
         if daily_info != None:

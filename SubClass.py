@@ -52,8 +52,8 @@ class DailyInfo:
         t_delta = datetime.timedelta(hours=9)
         JST = datetime.timezone(t_delta, 'JST')
         now = datetime.datetime.now(JST)
-        datestr = now.strftime('%Y/%m/%d')
-        self.txt = datestr + '\n'
+        self.datestr = now.strftime('%Y/%m/%d')
+        self.txt = self.datestr + '\n'
 
     def add_task(self,task):
         self.total_task.append(task)
@@ -65,4 +65,6 @@ class DailyInfo:
         for task_in_list in self.total_task:
             task_txt = str(task_in_list.task_id) + '. ' + task_in_list.task_name + ' (' + str(task_in_list.task_plan_time) + 'h)' + '(✔️' + str(task_in_list.task_actual_time) + 'h)' + ' ' + task_in_list.task_comment + '\n'
             self.txt += task_txt
-        return self.txt
+        output = self.txt
+        self.txt = self.datestr + '\n'
+        return output
