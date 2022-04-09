@@ -2,7 +2,7 @@ import time
 import datetime
 
 class Task:
-    def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.0, comment = '', id = 0):
+    def __init__(self, *, name = '', plan_time = 0.000, actual_time = 0.000, comment = '', id = 0):
         self.task_name = name
         self.task_plan_time = plan_time
         self.task_actual_time = actual_time
@@ -35,6 +35,7 @@ class Task:
             self.elapsed_time = int(time.time() - self.start_time)
             elapsed_hour = round(self.elapsed_time/3600, 4)
             self.task_actual_time += elapsed_hour
+            self.start_time = None
             #print('count time = ' + str(self.task_actual_time) + 'hour')
         return
 
