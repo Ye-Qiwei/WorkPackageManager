@@ -1,6 +1,9 @@
 import time
 import datetime
 
+# Class Task: containing task information like:
+# task_name: name of the task
+# task_name: name of the task
 class Task:
     def __init__(self, *, name = '', plan_time = 0.0, actual_time = 0.000, comment = '', id = 0):
         self.task_name = name
@@ -24,25 +27,18 @@ class Task:
             self.task_actual_time = actual_time
         if comment is not None:
             self.task_comment = comment
-        return
 
     def count_actual_time(self):
         self.start_time = time.time()
         self.baseline_actual_time = self.task_actual_time 
-        #print('count start')
-        return
     
     def update_actual_time(self):
         if self.start_time is not None:
            
             self.elapsed_time = int(time.time() - self.start_time)
-            #print('elapsed: ' + str(self.elapsed_time))
             elapsed_hour = round(self.elapsed_time/3600, 3)
-            #print('elapsed: ' + str(elapsed_hour))
             self.task_actual_time = elapsed_hour + self.baseline_actual_time
-            self.task_actual_time = round(self.task_actual_time, 3)
-            #print('count time = ' + str(self.task_actual_time) + 'hour')
-        return
+            self.task_actual_time = round(self.task_actual_time, 3)         
     
     def stop_counting(self):
         self.start_time = None
@@ -61,11 +57,9 @@ class DailyInfo:
 
     def add_task(self,task):
         self.total_task.append(task)
-        return
 
     def clear_task(self):
         self.total_task = []
-        return
 
     def generate_txt(self):       
         for task_in_list in self.total_task:

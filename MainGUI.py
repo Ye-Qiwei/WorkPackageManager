@@ -253,7 +253,7 @@ class UserInterfaces:
                             sg.popup(f'Wrong Actual Time Input! ({new_actual_time})', font=('Arial',12))
                             new_actual_time = '0.0'
                             
-                        globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = float(new_plan_time), actual_time = float(new_actual_time), comment = new_comment)
+                        globals()[f'task{index}'] = Task(name = new_name, id = int(new_id), plan_time = round(float(new_plan_time), 1), actual_time = round(float(new_actual_time), 3), comment = new_comment)
                         daily_info.add_task(globals()[f'task{index}'])
 
                 self.db[day_this - 1][cw_this - 1] = daily_info
